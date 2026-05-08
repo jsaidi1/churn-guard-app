@@ -1,0 +1,15 @@
+.venv
+__pycache__
+*.pyc
+.pytest_cache
+.mypy_cache
+.ruff_cache
+.git
+.github
+data
+notebook
+mlruns
+mlflow.db
+tests
+README.md
+.env

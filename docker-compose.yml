@@ -1,0 +1,58 @@
+services:
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v3.12.0
+    container_name: churnguard-mlflow
+    command: >
+      mlflow server
+      --host 0.0.0.0
+      --port 5000
+      --backend-store-uri sqlite:////mlflow/mlflow.db
+      --default-artifact-root /mlflow/mlruns
+    environment:
+      MLFLOW_SERVER_ALLOWED_HOSTS: "*"
+      MLFLOW_SERVER_CORS_ALLOWED_ORIGINS: "*"
+      MLFLOW_SERVER_DISABLE_SECURITY_MIDDLEWARE: "true"
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlflow:/mlflow
+    networks:
+      - churnguard-network
+
+  trainer:
+    build: .
+    container_name: churnguard-trainer
+    depends_on:
+      - mlflow
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      GIT_PYTHON_REFRESH: quiet
+    # command: >
+    #   sh -c "python scripts/download_data.py &&
+    #          python -m churnguard.train --model logistic_regression --register"
+    command: >
+       sh -c "python scripts/download_data.py &&
+              python -m churnguard.train"
+    volumes:
+      - ./mlflow:/mlflow
+    networks:
+      - churnguard-network
+
+  api:
+    build: .
+    container_name: churnguard-api
+    depends_on:
+      trainer:
+        condition: service_completed_successfully
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./mlflow:/mlflow
+    networks:
+      - churnguard-network
+
+networks:
+  churnguard-network:
+    driver: bridge

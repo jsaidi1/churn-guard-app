@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+.python-version
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+*.egg
+
+# Tests / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Données (téléchargées par le script)
+#data/*.csv
+!data/.gitkeep
+
+# Modèles (sauvegardés par le notebook)
+models/
+
+# MLflow (à ajouter quand vous l'aurez configuré)
+mlruns/
+mlflow.db
+
+# Docker (à ajouter quand vous l'aurez configuré)
+.env
+
+
+*to_delete*
+
+*_cache
+
+/mlflow
