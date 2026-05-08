@@ -1,0 +1,36 @@
+MLflow :
+========
+-Lancer un serveur MLflow local (en uv): 
+> uv run mlflow server --host 127.0.0.1 --port 5000 --backend-store-uri sqlite:///mlflow.db --default-artifact-root ./mlruns
+
+-Arrêter MLflow local:
+Terminal : > ctrl + c
+
+-Reset complétement MLflow:
+Supprimer artefacts/runs : mlruns 
+Supprimer la base MLflow : mlflow.db
+
+Pytest :
+========
+-Lancer les tests avec uv et avoir un rapport de couverture :
+> uv run pytest --cov=churnguard --cov-report=term-missing
+
+FastAPI :
+=========
+-Démarrer l'api :
+> uv run uvicorn api.main:app --reload
+
+Docker :
+========
+-Builder l'image de l'api churnguard :
+> docker build --no-cache -t churnguard-api .
+
+-Lancer une instance de l'api (un container) :
+> docker run --rm -p 8000:8000 churnguard-api
+
+-Lancer la stack (Docker compose) :
+> docker compose up -d --build
+
+requirements.txt à partir de pyproject.toml :
+=============================================
+> uv pip compile pyproject.toml --no-header --no-annotate -o requirements.txt
