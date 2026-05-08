@@ -1,0 +1,92 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+  packages: write
+
+env:
+  IMAGE_NAME: ghcr.io/jsaidi1/churnguard
+
+jobs:
+  release:
+    name: Build and push API image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract tag
+        id: vars
+        run: echo "TAG=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Docker image
+        run: |
+          docker build \
+            -t ${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.TAG }} \
+            -t ${{ env.IMAGE_NAME }}:latest \
+            .
+
+      - name: Push Docker image
+        run: |
+          docker push ${{ env.IMAGE_NAME }}:${{ steps.vars.outputs.TAG }}
+          docker push ${{ env.IMAGE_NAME }}:latest
+
+      - name: Generate release notes
+        run: |
+          PREVIOUS_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+
+          echo "## Release ${{ steps.vars.outputs.TAG }}" > release-notes.md
+          echo "" >> release-notes.md
+
+          echo "### Features" >> release-notes.md
+          git log ${PREVIOUS_TAG}..HEAD --pretty=format:"- %s" \
+            | grep "^- feat" >> release-notes.md || true
+
+          echo "" >> release-notes.md
+          echo "### Fixes" >> release-notes.md
+          git log ${PREVIOUS_TAG}..HEAD --pretty=format:"- %s" \
+            | grep "^- fix" >> release-notes.md || true
+
+          echo "" >> release-notes.md
+          echo "### CI / DevOps" >> release-notes.md
+          git log ${PREVIOUS_TAG}..HEAD --pretty=format:"- %s" \
+            | grep "^- ci" >> release-notes.md || true
+
+          echo "" >> release-notes.md
+          echo "### Refactor" >> release-notes.md
+          git log ${PREVIOUS_TAG}..HEAD --pretty=format:"- %s" \
+            | grep "^- refactor" >> release-notes.md || true
+
+          echo "" >> release-notes.md
+          echo "### Documentation" >> release-notes.md
+          git log ${PREVIOUS_TAG}..HEAD --pretty=format:"- %s" \
+            | grep "^- docs" >> release-notes.md || true
+
+          echo "" >> release-notes.md
+          echo "### Other changes" >> release-notes.md
+          git log ${PREVIOUS_TAG}..HEAD --pretty=format:"- %s" \
+            | grep -v "^- feat" \
+            | grep -v "^- fix" \
+            | grep -v "^- ci" \
+            | grep -v "^- refactor" \
+            | grep -v "^- docs" >> release-notes.md || true
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: release-notes.md
