@@ -1,7 +1,7 @@
 """
 - Nom du script : train.py
 - But : entraînement + log + registry + promotion + check loading promoted model
-- Execution directe : python churnguard/train.py
+- Execution directe : python -m churnguard.train
 """
 
 import os
