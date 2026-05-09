@@ -3,7 +3,7 @@
 [![CI](https://github.com/jsaidi1/churn-guard-app/actions/workflows/ci.yml/badge.svg)](https://github.com/jsaidi1/churn-guard-app/actions/workflows/ci.yml)
 [![Release](https://github.com/jsaidi1/churn-guard-app/actions/workflows/release.yml/badge.svg)](https://github.com/jsaidi1/churn-guard-app/actions/workflows/release.yml)
 
-Industrialisation MLOps d’un modèle de prédiction de churn client avec MLflow, FastAPI, Docker et GitHub Actions.
+Industrialisation MLOps d'un modèle de prédiction de churn client avec MLflow, FastAPI, Docker et GitHub Actions.
 
 ## Objectif
 
@@ -127,7 +127,7 @@ Trois modèles ont été entraînés et loggés dans MLflow :
 - RandomForestClassifier
 - GradientBoostingClassifier
 
-Les runs ont été comparés dans l’interface MLflow sur les métriques suivantes :
+Les runs ont été comparés dans l'interface MLflow sur les métriques suivantes :
 accuracy, precision, recall, f1 et roc_auc.
 
 Le modèle retenu est celui présentant le meilleur compromis entre `roc_auc`, `recall` et `f1` :
@@ -140,7 +140,7 @@ Le modèle retenu est celui présentant le meilleur compromis entre `roc_auc`, `
 - meilleur recall
 - roc_auc très proche du meilleur
 
-=> C’est le modèle le plus équilibré et robuste
+=> C'est le modèle le plus équilibré et robuste
 
 ## Quickstart
 
@@ -155,9 +155,9 @@ Cette commande démarre :
 
 - MLflow sur http://localhost:5000
 - le trainer qui entraîne, log et promeut le modèle
-- l’API FastAPI sur http://localhost:8000
+- l'API FastAPI sur http://localhost:8000
 
-### 3. Tester l’API
+### 3. Tester l'API
     curl http://localhost:8000/health
 
 Exemple de réponse attendu :
@@ -168,7 +168,7 @@ Exemple de réponse attendu :
         "version": "1"
     }
 
-Exemple d’appel /predict :
+Exemple d'appel /predict :
 
     curl -X POST "http://localhost:8000/predict" \
     -H "Content-Type: application/json" \
@@ -204,7 +204,7 @@ Exemple de réponse attendu :
 ## Endpoints API
 | Méthode | Endpoint         | Description                                        |
 | ------- | ---------------- | -------------------------------------------------- |
-| GET     | `/health`        | Vérifie que l’API et le modèle sont disponibles    |
+| GET     | `/health`        | Vérifie que l'API et le modèle sont disponibles    |
 | POST    | `/predict`       | Prédit le churn pour un client                     |
 | POST    | `/predict/batch` | Prédit le churn pour une liste de clients, max 100 |
 
@@ -274,10 +274,92 @@ Le workflow CD se déclenche sur tag. Exemple :
 
 Il effectue :
 
-- build de l’image Docker
+- build de l'image Docker
 - push vers GitHub Container Registry
 - génération automatique de release notes
-- création d’une GitHub Release
+- création d'une GitHub Release
+
+## Healthcheck Docker actif et utilisé dans docker-compose
+Dans le fichier docker-compose.yaml on a :
+
+    services:
+        mlflow:
+            ...
+            healthcheck:
+            test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+            interval: 10s
+            timeout: 5s
+            retries: 10
+
+        api:
+            ...
+            healthcheck:
+            test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+            interval: 30s
+            timeout: 5s
+            retries: 3
+            start_period: 30s
+
+    ...
+
+=> Docker vérifie périodiquement si le service répond correctement.
+
+## Slack : Notifications Slack pour les échecs de CI
+
+L'outil GitHub Actions a été connecté à Slack afin d'envoyer automatiquement une notification lorsqu'une pipeline CI échoue.
+
+La configuration est définie dans :
+
+```text
+.github/workflows/ci.yml
+```
+
+Exemple de notifications reçus lors des tests en echecs :
+![Dashboard](images/slack_notif_ci_failure.png)
+
+
+
+## Monitoring de drift avec Evidently sur un échantillon de production simulé
+
+Le monitoring du drift des données est réalisé avec Evidently à partir d’un échantillon simulant des données de production.
+
+Exécution du rapport :
+
+```bash
+uv run python monitoring/drift_report.py
+```
+
+Le rapport qui se produit : /monitoring/reports/drift_report.html
+
+## k8s :  Déploiement final sur un cluster k3s local (k3d) avec manifests YAML
+
+###  Manifests YAML
+| Fichier            | Ressource Kubernetes  | Rôle                        |
+| ------------------ | --------------------- | --------------------------- |
+| `namespace.yaml`   | Namespace             | Isolation logique du projet |
+| `pvc.yaml`         | PersistentVolumeClaim | Stockage persistant         |
+| `mlflow.yaml`      | Deployment + Service  | Serveur MLflow              |
+| `trainer-job.yaml` | Job                   | Entraînement ponctuel       |
+| `api.yaml`         | Deployment + Service  | API FastAPI                 |
+
+### Quickstart
+**1- Nettoyer et (re)créer le cluster**
+- Script : /scripts/k8s/k8s_reset_k3d_cluster.py
+- Exécution : 
+    > uv run python scripts/k8s/k8s_reset_k3d_cluster.py
+
+**2- Script pour le déploiement sur k8s**
+- Script : /scripts/k8s/k8s_deploy.py
+- Exécution : 
+    > uv run python scripts/k8s/k8s_deploy.py
+
+Si le déploiement s'est passé sans problème, on aura dans la console les messages suivants :
+
+Deployment completed successfully.
+- API:    http://localhost:8000
+- MLflow: http://localhost:5050
+
+Donc l'application est prête à être utilisée.
 
 ## Auteur
 
