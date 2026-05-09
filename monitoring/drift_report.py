@@ -28,9 +28,7 @@ def main():
 
     # Example artificial drift
     if "MonthlyCharges" in current_df.columns:
-        current_df["MonthlyCharges"] = (
-            current_df["MonthlyCharges"] * 1.15
-        )
+        current_df["MonthlyCharges"] = current_df["MonthlyCharges"] * 1.15
 
     # Create report
     report = Report(

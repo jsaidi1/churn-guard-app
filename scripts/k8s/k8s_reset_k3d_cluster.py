@@ -1,6 +1,7 @@
 """
 > uv run python scripts/k8s/k8s_reset_k3d_cluster.py
 """
+
 import subprocess
 import sys
 
@@ -27,8 +28,8 @@ def main() -> None:
 
     # Create fresh cluster
     run(
-        f'k3d cluster create {CLUSTER_NAME} '
-        f'--agents 1 '
+        f"k3d cluster create {CLUSTER_NAME} "
+        f"--agents 1 "
         f'--api-port "127.0.0.1:6550" '
         f'-p "8000:30080@agent:0" '
         f'-p "5050:30050@agent:0"'

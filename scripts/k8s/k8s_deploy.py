@@ -14,6 +14,7 @@ Avant de lancer :
 
 > uv run python .\scripts\k8s\k8s_deploy.py
 """
+
 import subprocess
 import sys
 
@@ -45,34 +46,22 @@ def main():
     run("kubectl apply -f k8s/mlflow.yaml")
 
     # Wait for MLflow deployment
-    run(
-        f"kubectl rollout status deployment/mlflow "
-        f"-n {NAMESPACE} --timeout=300s"
-    )
+    run(f"kubectl rollout status deployment/mlflow -n {NAMESPACE} --timeout=300s")
 
     # Delete old trainer job if exists
-    run(
-        f"kubectl delete job trainer "
-        f"-n {NAMESPACE} --ignore-not-found"
-    )
+    run(f"kubectl delete job trainer -n {NAMESPACE} --ignore-not-found")
 
     # Launch trainer job
     run("kubectl apply -f k8s/trainer-job.yaml")
 
     # Wait for trainer completion
-    run(
-        f"kubectl wait --for=condition=complete "
-        f"job/trainer -n {NAMESPACE} --timeout=600s"
-    )
+    run(f"kubectl wait --for=condition=complete job/trainer -n {NAMESPACE} --timeout=600s")
 
     # Deploy API
     run("kubectl apply -f k8s/api.yaml")
 
     # Wait for API deployment
-    run(
-        f"kubectl rollout status deployment/churnguard-api "
-        f"-n {NAMESPACE} --timeout=300s"
-    )
+    run(f"kubectl rollout status deployment/churnguard-api -n {NAMESPACE} --timeout=300s")
 
     # Display resources
     run(f"kubectl get all -n {NAMESPACE}")
