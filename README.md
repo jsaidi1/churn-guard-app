@@ -1,15 +1,21 @@
-# ChurnGuard — projet de départ
+# ChurnGuard MLOps
 
-> **Mission** : industrialiser ce projet en 2 jours selon le cahier des charges fourni
-> (`Sujet_ChurnGuard_MLOps.docx`). Vous ne touchez pas à la data science.
+[![CI](https://github.com/jsaidi1/churn-guard-app/actions/workflows/ci.yml/badge.svg)](https://github.com/jsaidi1/churn-guard-app/actions/workflows/ci.yml)
+[![Release](https://github.com/jsaidi1/churn-guard-app/actions/workflows/release.yml/badge.svg)](https://github.com/jsaidi1/churn-guard-app/actions/workflows/release.yml)
 
-## Contexte
+Industrialisation MLOps d’un modèle de prédiction de churn client avec MLflow, FastAPI, Docker et GitHub Actions.
 
-Vous reprenez le projet d'une data scientist de TelcoFr. Elle a entraîné un
-modèle de prédiction de churn dans un notebook qui marche. Personne d'autre que
-elle ne sait le faire tourner.
+## Objectif
 
-Votre rôle : transformer ce repo en projet MLOps de production.
+Le projet transforme un notebook de data science en application MLOps industrialisée :
+
+- code Python modulaire
+- tests automatisés avec coverage
+- tracking et registry MLflow
+- API FastAPI de prédiction
+- stack Docker Compose
+- CI avec lint, typage, tests, build Docker et scan Trivy
+- CD sur tag avec publication GHCR
 
 ## Données
 
@@ -29,58 +35,86 @@ Sources :
 - [Kaggle — Telco Customer Churn](https://www.kaggle.com/datasets/blastchar/telco-customer-churn)
 - [IBM Sample Data Sets](https://www.ibm.com/community/blogs/datasets/)
 
-## Ce qu'il y a dans le repo
 
+## Architecture
+
+```text
+                  ┌─────────────────────┐
+                  │   Dataset Telco     │
+                  └─────────┬───────────┘
+                            │
+                            ▼
+                  ┌─────────────────────┐
+                  │ churnguard.train    │
+                  │ training + metrics  │
+                  └─────────┬───────────┘
+                            │
+                            ▼
+                  ┌─────────────────────┐
+                  │       MLflow        │
+                  │ tracking + registry │
+                  └─────────┬───────────┘
+                            │
+                            ▼
+                  ┌─────────────────────┐
+                  │   Model Production  │
+                  └─────────┬───────────┘
+                            │
+                            ▼
+                  ┌──────────────────────┐
+                  │     FastAPI API      │
+                  │ /health /predict ... │
+                  └─────────┬────────────┘
+                            │
+                            ▼
+                  ┌───────────────────────┐
+                  │ Docker / GHCR / CI-CD │
+                  └───────────────────────┘
 ```
-.
-├── README.md                       # ce fichier
-├── requirements.txt                # dépendances minimales (pandas, sklearn, jupyter)
-├── notebook/
-│   └── exploration.ipynb           # notebook qui marche, mais qui pue
-├── scripts/
-│   └── download_data.py            # téléchargement + vérification SHA-256
-├── data/
-│   └── .gitkeep                    # le CSV est téléchargé ici
-└── .gitignore
-```
 
-## Démarrage rapide (état initial)
+## Structure du projet
 
-```bash
-# 1. installer les dépendances
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
+    .
+    ├── api/
+    │   ├── main.py
+    │   ├── model_loader.py
+    │   └── schemas.py
+    ├── churnguard/
+    │   ├── data.py
+    │   ├── evaluate.py
+    │   └── train.py
+    ├── scripts/
+    │   └── download_data.py
+    ├── tests/
+    │   └── test_data.py
+    │   └── test_train.py
+    ├── .github/workflows/
+    │   ├── ci.yml
+    │   └── release.yml
+    ├── Dockerfile
+    ├── docker-compose.yml
+    ├── pyproject.toml
+    ├── README.md
+    └── uv.lock
 
-# 2. télécharger les données
-python scripts/download_data.py
+## Stack technique
 
-# 3. ouvrir le notebook
-jupyter notebook notebook/exploration.ipynb
-```
+- Python 3.11
+- FastAPI
+- MLflow 3
+- scikit-learn
+- pandas
+- Docker
+- Docker Compose
+- GitHub Actions
+- Ruff
+- mypy
+- pytest
+- Trivy
+- uv
 
-À ce stade le notebook s'exécute de bout en bout et produit un fichier
-`models/best_model.pkl`. C'est tout. Pas de tests, pas de Docker, pas d'API,
-pas de CI.
+## Résultats de l'entrainement des midèles sur l'UI MLflow (en local)
 
-## Ce que vous devez faire
-
-Lire le sujet (`Sujet_ChurnGuard_MLOps.docx`), puis livrer :
-
-- un package Python `churnguard/` modulaire avec tests pytest,
-- un setup MLflow (tracking + registry) avec un modèle promu en `Production`,
-- une API FastAPI qui charge le modèle depuis le registry,
-- un Dockerfile multi-stage et un docker-compose qui démarre toute la stack,
-- un workflow GitHub Actions complet (lint, typecheck, tests, build, scan).
-
-
-## Licence
-
-Code : MIT.
-Données : IBM Sample Data, voir conditions sur le site IBM.
-
-
-
-### Comparaison MLflow (ajoutéééééééééé)
 | Modèle              | accuracy  | f1        | precision | recall    | roc_auc   |
 | ------------------- | --------- | --------- | --------- | --------- | --------- |
 | Gradient Boosting   | 0.796     | 0.58      | 0.641     | 0.529     | **0.839** |
@@ -98,18 +132,153 @@ accuracy, precision, recall, f1 et roc_auc.
 
 Le modèle retenu est celui présentant le meilleur compromis entre `roc_auc`, `recall` et `f1` :
 
-1) Meilleur global (équilibre)
+**Logistic Regression**
 
-➡️ Logistic Regression
+- meilleur accuracy
+- meilleur f1
+- meilleur precision
+- meilleur recall
+- roc_auc très proche du meilleur
 
-meilleur accuracy
-meilleur f1
-meilleur precision
-meilleur recall
-roc_auc très proche du meilleur
+=> C’est le modèle le plus équilibré et robuste
 
-👉 C’est le modèle le plus équilibré et robuste
+## Quickstart
 
+### 1. Cloner le dépôt
 
-Badge README
-![CI](https://github.com/<USER>/<REPO>/actions/workflows/ci.yml/badge.svg)
+    git clone https://github.com/jsaidi1/churn-guard-app.git
+
+### 2. Lancer la stack complète
+    docker compose up -d
+
+Cette commande démarre :
+
+- MLflow sur http://localhost:5000
+- le trainer qui entraîne, log et promeut le modèle
+- l’API FastAPI sur http://localhost:8000
+
+### 3. Tester l’API
+    curl http://localhost:8000/health
+
+Exemple de réponse attendu :
+
+    {
+        "status": "ok",
+        "model": "churnguard",
+        "version": "1"
+    }
+
+Exemple d’appel /predict :
+
+    curl -X POST "http://localhost:8000/predict" \
+    -H "Content-Type: application/json" \
+    -d '{
+        "gender": "Female",
+        "SeniorCitizen": 0,
+        "Partner": "Yes",
+        "Dependents": "No",
+        "tenure": 12,
+        "PhoneService": "Yes",
+        "MultipleLines": "No",
+        "InternetService": "DSL",
+        "OnlineSecurity": "Yes",
+        "OnlineBackup": "No",
+        "DeviceProtection": "No",
+        "TechSupport": "Yes",
+        "StreamingTV": "No",
+        "StreamingMovies": "No",
+        "Contract": "One year",
+        "PaperlessBilling": "Yes",
+        "PaymentMethod": "Electronic check",
+        "MonthlyCharges": 65.5,
+        "TotalCharges": 780.0
+    }'
+
+Exemple de réponse attendu :
+
+    {
+        "churn": false,
+        "probability": 0.23
+    }
+
+## Endpoints API
+| Méthode | Endpoint         | Description                                        |
+| ------- | ---------------- | -------------------------------------------------- |
+| GET     | `/health`        | Vérifie que l’API et le modèle sont disponibles    |
+| POST    | `/predict`       | Prédit le churn pour un client                     |
+| POST    | `/predict/batch` | Prédit le churn pour une liste de clients, max 100 |
+
+#### Swagger 
+    http://localhost:8000/docs
+
+## MLflow
+- Interface MLflow :
+    http://localhost:5000
+
+- Le pipeline entraîne et compare trois modèles :
+
+    - LogisticRegression
+    - RandomForestClassifier
+    - GradientBoostingClassifier
+
+Le meilleur modèle est enregistré sous :
+
+    churnguard
+
+et promu en stage :
+
+    Production
+
+## Image Docker GHCR
+Image publiée :
+
+    ghcr.io/jsaidi1/churnguard-api:v2.0.0
+
+Pull :
+
+    docker pull ghcr.io/jsaidi1/churnguard:v2.0.0
+
+## Tests
+Pour lancer les tests :
+
+    uv run pytest --cov=churnguard --cov-report=term-missing --cov-fail-under=70
+
+## Qualité code
+
+    uv run ruff check .
+    uv run ruff format --check .
+    uv run mypy churnguard api
+
+## CI
+
+La CI est déclenchée sur :
+
+    push
+    pull_request
+
+Jobs :
+
+    lint
+    typecheck
+    test
+    build + Trivy scan
+
+Le build Docker est lancé uniquement si lint, typecheck et tests sont verts.
+
+## CD / Release
+
+Le workflow CD se déclenche sur tag. Exemple :
+
+    git tag v1.0.0
+    git push origin v1.0.0
+
+Il effectue :
+
+- build de l’image Docker
+- push vers GitHub Container Registry
+- génération automatique de release notes
+- création d’une GitHub Release
+
+## Auteur
+
+J.SAIDI (07/05/2026)
