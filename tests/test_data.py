@@ -180,7 +180,3 @@ def test_split_data_returns_correct_shapes_and_stratification() -> None:
 
     assert X_train.equals(X_train2)
     assert y_test.equals(y_test2)
-
-
-def test_fail():
-    assert False
