@@ -18,12 +18,18 @@ services:
       - ./mlflow:/mlflow
     networks:
       - churnguard-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 
   trainer:
     build: .
     container_name: churnguard-trainer
     depends_on:
-      - mlflow
+      mlflow:
+        condition: service_healthy
     environment:
       MLFLOW_TRACKING_URI: http://mlflow:5000
       GIT_PYTHON_REFRESH: quiet
@@ -52,6 +58,13 @@ services:
       - ./mlflow:/mlflow
     networks:
       - churnguard-network
+
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
 
 networks:
   churnguard-network:

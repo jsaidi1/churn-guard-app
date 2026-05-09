@@ -141,3 +141,21 @@ jobs:
           ignore-unfixed: true
           vuln-type: os,library
           severity: CRITICAL
+
+# Notification Slack en cas d'échec CI
+notify:
+  name: Slack notification
+  runs-on: ubuntu-latest
+  needs:
+    - lint
+    - typecheck
+    - test
+    - build
+  if: failure()
+
+  steps:
+    - name: Send Slack notification
+      run: |
+        curl -X POST -H 'Content-type: application/json' \
+        --data '{"text":"❌ CI failed: ${{ github.repository }} / ${{ github.ref_name }}"}' \
+        ${{ secrets.SLACK_WEBHOOK_URL }}
