@@ -1,0 +1,38 @@
+# trainer devient un Job Kubernetes, car il doit s’exécuter une fois puis terminer
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: trainer
+  namespace: churn-guard
+spec:
+  backoffLimit: 1
+  template:
+    metadata:
+      labels:
+        app: trainer
+    spec:
+      restartPolicy: Never
+      nodeSelector:
+        kubernetes.io/hostname: k3d-churnguard-agent-0
+      containers:
+        - name: trainer
+          image: churn-guard:latest
+          imagePullPolicy: Never
+          command:
+            - sh
+            - -c
+            - |
+              python scripts/download_data.py &&
+              python -m churnguard.train
+          env:
+            - name: MLFLOW_TRACKING_URI
+              value: http://mlflow:5000
+            - name: GIT_PYTHON_REFRESH
+              value: quiet
+          volumeMounts:
+            - name: mlflow-storage
+              mountPath: /mlflow
+      volumes:
+        - name: mlflow-storage
+          persistentVolumeClaim:
+            claimName: mlflow-pvc
