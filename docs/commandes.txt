@@ -34,3 +34,7 @@ Docker :
 requirements.txt à partir de pyproject.toml :
 =============================================
 > uv pip compile pyproject.toml --no-header --no-annotate -o requirements.txt
+
+Formattage du code :
+====================
+> uv run ruff format tests/test_data.py
