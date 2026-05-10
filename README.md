@@ -112,6 +112,7 @@ Sources :
 - pytest
 - Trivy
 - uv
+- Connexion internet
 
 ## Résultats de l'entrainement des midèles sur l'UI MLflow (en local)
 
